@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences sd;
     private KeyStore keyStore;
     // Variable used for storing the key in the Android Keystore container
-    private static final String KEY_NAME = "androidHive";
+    private static final String KEY_NAME = "lionertic";
     private Cipher cipher;
 
     @Override
