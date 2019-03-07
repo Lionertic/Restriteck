@@ -5,7 +5,6 @@ import android.content.Intent;
 import java.text.DecimalFormat;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +18,8 @@ import com.restri_tech.R;
 import com.restri_tech.custom;
 
 import java.util.List;
+
+import androidx.recyclerview.widget.RecyclerView;
 
 public class MyAdapter extends RecyclerView.Adapter {
     List < ApplicationInfo > apps;

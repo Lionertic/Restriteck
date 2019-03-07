@@ -10,20 +10,15 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.restri_tech.Adapter.app;
 import com.restri_tech.DB.Package;
 import com.restri_tech.HomeActivity;
@@ -33,6 +28,13 @@ import com.restri_tech.R;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 
 /**
@@ -150,7 +152,9 @@ public class InstallFragment extends Fragment {
                         app a = result.get(i);
                         result.set(i, result.get(k));
                         result.set(k, a);
+                        Log.e("qwertyuiop",a.aiGet().loadLabel(packageManager).toString());
                     }
+
             app.addAll(result);
             myArrayAdapter.notifyDataSetChanged();
             ed.setVisibility(View.VISIBLE);
