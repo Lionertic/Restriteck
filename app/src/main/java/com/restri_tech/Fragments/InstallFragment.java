@@ -107,7 +107,7 @@ public class InstallFragment extends Fragment {
                 getActivity().setTitle("Blocked Apps");
                 BlockFragment bf = new BlockFragment();
                 FragmentManager fm = getFragmentManager();
-                fm.beginTransaction().replace(R.id.fragment, bf).commit();
+                fm.beginTransaction().replace(R.id.container, bf).commit();
 
             }
         });
