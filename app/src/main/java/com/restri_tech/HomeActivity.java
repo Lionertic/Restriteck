@@ -6,6 +6,8 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.TypedArray;
+import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.ColorInt;
@@ -17,6 +19,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.SpannableString;
+import android.text.style.StyleSpan;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -50,8 +55,10 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
     private Drawable[] screenIcons;
 
     private SlidingRootNav slidingRootNav;
-
-
+    public static Display display;
+    public static Drawable droid ;
+    public static Rect droidTarget;
+    public static SpannableString sassyDesc;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -60,6 +67,20 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
         setContentView(R.layout.activity_home);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        // We load a drawable and create a location to show a tap target here
+        // We need the display to get the width and height at this point in time
+        display = getWindowManager().getDefaultDisplay();
+        // Load our little droid guy
+        droid = ContextCompat.getDrawable(this, R.drawable.ic_action_number);
+        // Tell our droid buddy where we want him to appear
+        droidTarget = new Rect(0, 0, droid.getIntrinsicWidth() * 2, droid.getIntrinsicHeight() * 2);
+        // Using deprecated methods makes you look way cool
+        droidTarget.offset(display.getWidth() / 2, display.getHeight() / 2);
+
+        sassyDesc = new SpannableString("It allows you to go back, sometimes");
+        sassyDesc.setSpan(new StyleSpan(Typeface.ITALIC), sassyDesc.length() - "sometimes".length(), sassyDesc.length(), 0);
+
 
         slidingRootNav = new SlidingRootNavBuilder(this)
                 .withToolbarMenuToggle(toolbar)

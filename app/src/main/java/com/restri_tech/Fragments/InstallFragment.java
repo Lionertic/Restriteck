@@ -14,25 +14,40 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
+import android.text.SpannableString;
 import android.text.TextWatcher;
+import android.text.style.UnderlineSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.getkeepsafe.taptargetview.TapTarget;
+import com.getkeepsafe.taptargetview.TapTargetSequence;
+import com.getkeepsafe.taptargetview.TapTargetView;
 import com.restri_tech.Adapter.app;
 import com.restri_tech.DB.Package;
 import com.restri_tech.HomeActivity;
 import com.restri_tech.Adapter.MyArrayAdapter;
+import com.restri_tech.MainActivity;
+import com.restri_tech.PrefManager;
 import com.restri_tech.R;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static com.restri_tech.HomeActivity.droid;
+import static com.restri_tech.HomeActivity.droidTarget;
+import static com.restri_tech.HomeActivity.sassyDesc;
 
 
 /**
@@ -46,6 +61,7 @@ public class InstallFragment extends Fragment {
     List <Package> apps;
     EditText ed;
     FloatingActionButton fab;
+    private PrefManager prefManager;
 
     public InstallFragment() {
         // Required empty public constructor
@@ -54,6 +70,8 @@ public class InstallFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
         app = new ArrayList < > ();
 
         MyTask myTask = new MyTask();
@@ -65,29 +83,6 @@ public class InstallFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
-
-        SharedPreferences sharedPreferences = this.getActivity().getSharedPreferences("MyPrefs", 0);
-        if (sharedPreferences.getBoolean("iapps", true)) {
-
-
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getContext());
-            alertDialogBuilder.setMessage("1.All the apps installed in your device will be listed here. \n\n2.Select the apps you want to restrict \n\n3.Click the icon at the bottom of the screen");
-            alertDialogBuilder.setPositiveButton("ok",
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface arg0, int arg1) {
-                            //startActivity(new Intent(getBaseContext(),PassCheck.class));
-
-                        }
-                    });
-
-            AlertDialog alertDialog = alertDialogBuilder.create();
-            alertDialog.show();
-            sharedPreferences.edit().putBoolean("iapps", false).commit();
-
-        }
-
 
         View v = inflater.inflate(R.layout.fragment_install, container, false);
 
@@ -134,6 +129,37 @@ public class InstallFragment extends Fragment {
                 filter(s.toString());
             }
         });
+
+        final TapTargetSequence sequence = new TapTargetSequence(getActivity())
+                .targets(
+                        // This tap target will target the back button, we just need to pass its containing toolbar
+                        TapTarget.forView(fab, "llll", sassyDesc).id(1).cancelable(false).icon(ContextCompat.getDrawable(context,R.drawable.ic_block)),
+                        // Likewise, this tap target will target the search button
+                        TapTarget.forView(ed, "simple", sassyDesc).id(2).cancelable(false).icon(ContextCompat.getDrawable(context,R.drawable.ic_action_search)
+                ))
+                .listener(new TapTargetSequence.Listener() {
+                    // This listener will tell us when interesting(tm) events happen in regards
+                    // to the sequence
+                    @Override
+                    public void onSequenceFinish() {
+
+                    }
+
+                    @Override
+                    public void onSequenceStep(TapTarget lastTarget, boolean targetClicked) {
+                        Log.d("TapTargetView", "Clicked on " + lastTarget.id());
+                    }
+
+                    @Override
+                    public void onSequenceCanceled(TapTarget lastTarget) {
+                    }
+                });
+
+        prefManager = new PrefManager(context,"iapps");
+        if (prefManager.isFirstTimeLaunch()) {
+            sequence.start();
+            prefManager.setFirstTimeLaunch(false);
+        }
         return v;
     }
 

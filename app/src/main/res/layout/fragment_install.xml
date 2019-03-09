@@ -33,7 +33,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:foregroundGravity="right|bottom"
         android:layout_marginRight="20dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="40dp"
         android:elevation="6dp"
         app:pressedTranslationZ="12dp"
         app:borderWidth="0dp"
