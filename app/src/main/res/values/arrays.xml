@@ -5,8 +5,9 @@
         <item>Home</item>
         <item>Installed Apps</item>
         <item>Blocked Apps</item>
-        <item>Change Password</item>
         <item />
+        <item>Change Password</item>
+        <item>Change Number</item>
         <item>Uninstall</item>
     </string-array>
 
@@ -14,8 +15,9 @@
         <item>@drawable/ic_action_home</item>
         <item>@drawable/ic_action_installed</item>
         <item>@drawable/ic_block</item>
-        <item>@drawable/ic_action_change</item>
         <item>0</item>
+        <item>@drawable/ic_action_change</item>
+        <item>@drawable/ic_action_number</item>
         <item>@drawable/ic_action_uninstall</item>
     </array>
 

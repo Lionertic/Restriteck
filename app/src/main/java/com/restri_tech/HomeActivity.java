@@ -1,6 +1,8 @@
 package com.restri_tech;
 
 import android.arch.persistence.room.Room;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.TypedArray;
@@ -10,13 +12,17 @@ import android.support.annotation.ColorInt;
 import android.support.annotation.ColorRes;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.restri_tech.DB.MyAppDatabase;
+import com.restri_tech.Forgot.Forgot;
 import com.restri_tech.Fragments.BlockFragment;
 import com.restri_tech.Fragments.HomeFragment;
 import com.restri_tech.Fragments.InstallFragment;
@@ -36,8 +42,9 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
     private static final int POS_HOME = 0;
     private static final int POS_INSTALLED = 1;
     private static final int POS_BLOCKED = 2;
-    private static final int POS_CHANGE = 3;
-    private static final int POS_UNINSTALL = 5;
+    private static final int POS_CHANGE = 4;
+    private static final int POS_NUMBER = 5;
+    private static final int POS_UNINSTALL = 6;
 
     private String[] screenTitles;
     private Drawable[] screenIcons;
@@ -69,8 +76,9 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
                 createItemFor(POS_HOME).setChecked(true),
                 createItemFor(POS_INSTALLED),
                 createItemFor(POS_BLOCKED),
-                createItemFor(POS_CHANGE),
                 new SpaceItem(48),
+                createItemFor(POS_CHANGE),
+                createItemFor(POS_NUMBER),
                 createItemFor(POS_UNINSTALL)));
         adapter.setListener(this);
 
@@ -91,7 +99,7 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
             setTitle("Installed Apps");
             InstallFragment iF = new InstallFragment();
             FragmentManager fm = getSupportFragmentManager();
-            fm.beginTransaction().replace(R.id.fragment, iF).commit();
+            fm.beginTransaction().replace(R.id.container, iF).commit();
 
         }
         else {
@@ -139,18 +147,15 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
                 Main m = new Main();
                 fm.beginTransaction().replace(R.id.container, m).commit();
                 break;
-//        }else if(id == R.id.security){
-//            change(false);
-//            SharedPreferences sd1 = getSharedPreferences("Forgot",0);
-//            sd1.edit().putBoolean("FirstN",true).commit();
-//            setTitle("Change");
-//            Forgot f = new Forgot();
-//            FragmentManager fm = getSupportFragmentManager();
-//            fm.beginTransaction().replace(R.id.fragment, f).commit();
-//        }
+            case POS_NUMBER :
+                change(false);
+            SharedPreferences sd1 = getSharedPreferences("Forgot",0);
+            sd1.edit().putBoolean("FirstN",true).commit();
+            setTitle("Change");
+            Forgot f = new Forgot();
+            fm.beginTransaction().replace(R.id.container, f).commit();
         }
         slidingRootNav.closeMenu();
-        //showFragment(selectedScreen);
     }
 
     private DrawerItem createItemFor(int position) {
@@ -177,6 +182,43 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
         ta.recycle();
         return icons;
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.home, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+            alertDialogBuilder.setMessage("Help:\n\nInstalled apps:\n\t\tSelect apps you want to restrict and click the icon present at bottom of the screen\n\nBlocked apps:\n\t\tTimer of each app can be edited. swipe to remove the app from the list.\n\nHome: \n\t\tSelect start service to start restricting apps.Select stop service to stop restricting apps");
+            alertDialogBuilder.setPositiveButton("ok",
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface arg0, int arg1) {
+                            //startActivity(new Intent(getBaseContext(),PassCheck.class));
+                        }
+                    });
+
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+        }else if(id == R.id.exit){
+            SharedPreferences sd=getSharedPreferences("Worker", Context.MODE_PRIVATE);
+            sd.edit().putBoolean("Now",false).commit();
+            finish();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 
     @ColorInt
     private int color(@ColorRes int res) {
