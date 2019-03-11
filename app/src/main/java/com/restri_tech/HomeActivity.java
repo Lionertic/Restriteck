@@ -1,14 +1,18 @@
 package com.restri_tech;
 
+import android.app.admin.DevicePolicyManager;
 import android.arch.persistence.room.Room;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.ColorInt;
 import android.support.annotation.ColorRes;
@@ -21,6 +25,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
+import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,6 +37,7 @@ import com.restri_tech.Fragments.BlockFragment;
 import com.restri_tech.Fragments.HomeFragment;
 import com.restri_tech.Fragments.InstallFragment;
 import com.restri_tech.Fragments.Main;
+import com.restri_tech.PolicyManager.DeviceAdminSample;
 import com.restri_tech.menu.DrawerAdapter;
 import com.restri_tech.menu.DrawerItem;
 import com.restri_tech.menu.SimpleItem;
@@ -59,6 +65,8 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
     public static Drawable droid ;
     public static Rect droidTarget;
     public static SpannableString sassyDesc;
+
+    PrefManager prefManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -68,14 +76,9 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // We load a drawable and create a location to show a tap target here
-        // We need the display to get the width and height at this point in time
         display = getWindowManager().getDefaultDisplay();
-        // Load our little droid guy
         droid = ContextCompat.getDrawable(this, R.drawable.ic_action_number);
-        // Tell our droid buddy where we want him to appear
         droidTarget = new Rect(0, 0, droid.getIntrinsicWidth() * 2, droid.getIntrinsicHeight() * 2);
-        // Using deprecated methods makes you look way cool
         droidTarget.offset(display.getWidth() / 2, display.getHeight() / 2);
 
         sassyDesc = new SpannableString("It allows you to go back, sometimes");
@@ -110,18 +113,13 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
 
         adapter.setSelected(POS_HOME);
         myAppDatabase = Room.databaseBuilder(getApplicationContext(), MyAppDatabase.class, "userdb").fallbackToDestructiveMigration().allowMainThreadQueries().build();
-        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", 0);
-        if (sharedPreferences.getBoolean("home", true)) {
-
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("home", false);
-            editor.commit();
-
+        prefManager = new PrefManager(getBaseContext(),"home");
+        if (prefManager.isFirstTimeLaunch()) {
             setTitle("Installed Apps");
             InstallFragment iF = new InstallFragment();
             FragmentManager fm = getSupportFragmentManager();
             fm.beginTransaction().replace(R.id.container, iF).commit();
-
+            prefManager.setFirstTimeLaunch(false);
         }
         else {
             setTitle("Home");
@@ -170,15 +168,35 @@ public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnI
                 break;
             case POS_NUMBER :
                 change(false);
-            SharedPreferences sd1 = getSharedPreferences("Forgot",0);
-            sd1.edit().putBoolean("FirstN",true).commit();
-            setTitle("Change");
-            Forgot f = new Forgot();
-            fm.beginTransaction().replace(R.id.container, f).commit();
+                SharedPreferences sd1 = getSharedPreferences("Forgot",0);
+                sd1.edit().putBoolean("FirstN",true).commit();
+                setTitle("Change");
+                Forgot f = new Forgot();
+                fm.beginTransaction().replace(R.id.container, f).commit();
+            case POS_UNINSTALL:
+                change(false);
+                ComponentName devAdminReceiver = new ComponentName(getBaseContext(), DeviceAdminSample.class);
+                DevicePolicyManager dpm = (DevicePolicyManager)getBaseContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
+                dpm.removeActiveAdmin(devAdminReceiver);
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
+                startActivity(intent);
         }
         slidingRootNav.closeMenu();
     }
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) {
+            if (resultCode == RESULT_OK) {
+                Log.d("TAG", "onActivityResult: user accepted the (un)install");
+            } else if (resultCode == RESULT_CANCELED) {
+                Log.d("TAG", "onActivityResult: user canceled the (un)install");
+            } else if (resultCode == RESULT_FIRST_USER) {
+                Log.d("TAG", "onActivityResult: failed to (un)install");
+            }
+        }
+    }
     private DrawerItem createItemFor(int position) {
         return new SimpleItem(screenIcons[position], screenTitles[position])
                 .withIconTint(color(R.color.textColorSecondary))

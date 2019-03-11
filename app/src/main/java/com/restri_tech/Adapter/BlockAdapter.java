@@ -20,7 +20,7 @@ import com.restri_tech.custom;
 
 import java.util.List;
 
-public class MyAdapter extends RecyclerView.Adapter {
+public class BlockAdapter extends RecyclerView.Adapter {
     List < ApplicationInfo > apps;
     List <Package> app;
     PackageManager packageManager;
@@ -50,7 +50,7 @@ public class MyAdapter extends RecyclerView.Adapter {
 
     }
 
-    public MyAdapter(Context context, List < ApplicationInfo > items, PackageManager p) {
+    public BlockAdapter(Context context, List < ApplicationInfo > items, PackageManager p) {
         apps = items;
         packageManager = p;
         this.context = context;

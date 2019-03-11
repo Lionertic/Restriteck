@@ -64,7 +64,7 @@ public class BackCheck extends Service {
         super.onCreate();
         if (Build.VERSION.SDK_INT >= 26) {
             createNotification();
-            Intent intent = new Intent(this, HomeActivity.class);
+            Intent intent = new Intent(this, WelcomeActivity.class);
             intent.setFlags(FLAG_ACTIVITY_SINGLE_TOP | FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,PendingIntent.FLAG_UPDATE_CURRENT );
 

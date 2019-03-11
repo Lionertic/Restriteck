@@ -15,7 +15,7 @@ import com.restri_tech.R;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MyArrayAdapter extends RecyclerView.Adapter {
+public class InstallAdapter extends RecyclerView.Adapter {
     List<app> apps;
     PackageManager packageManager;
 
@@ -42,7 +42,7 @@ public class MyArrayAdapter extends RecyclerView.Adapter {
 
     }
 
-    public MyArrayAdapter(PackageManager p, List<app> apps) {
+    public InstallAdapter(PackageManager p, List<app> apps) {
         packageManager = p;
         this.apps = apps;
     }

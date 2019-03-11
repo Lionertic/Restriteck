@@ -41,6 +41,5 @@ dependencies {
     implementation 'com.andrognito.patternlockview:patternlockview:1.0.0'
     implementation 'com.yarolegovich:sliding-root-nav:1.1.0'
     implementation 'com.getkeepsafe.taptargetview:taptargetview:1.12.0'
-    implementation 'agency.tango.android:material-intro-screen:0.0.5'
-
+    implementation 'com.github.florent37:viewtooltip:1.1.4'
 }

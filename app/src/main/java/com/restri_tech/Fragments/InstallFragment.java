@@ -3,8 +3,6 @@ package com.restri_tech.Fragments;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -15,29 +13,22 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
-import android.text.SpannableString;
 import android.text.TextWatcher;
-import android.text.style.UnderlineSpan;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.getkeepsafe.taptargetview.TapTarget;
 import com.getkeepsafe.taptargetview.TapTargetSequence;
-import com.getkeepsafe.taptargetview.TapTargetView;
+import com.github.florent37.viewtooltip.ViewTooltip;
 import com.restri_tech.Adapter.app;
 import com.restri_tech.DB.Package;
 import com.restri_tech.HomeActivity;
-import com.restri_tech.Adapter.MyArrayAdapter;
-import com.restri_tech.MainActivity;
+import com.restri_tech.Adapter.InstallAdapter;
 import com.restri_tech.PrefManager;
 import com.restri_tech.R;
 
@@ -45,8 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.restri_tech.HomeActivity.droid;
-import static com.restri_tech.HomeActivity.droidTarget;
 import static com.restri_tech.HomeActivity.sassyDesc;
 
 
@@ -55,13 +44,14 @@ import static com.restri_tech.HomeActivity.sassyDesc;
  */
 public class InstallFragment extends Fragment {
     RecyclerView myRecyclerView;
-    MyArrayAdapter myArrayAdapter;
+    InstallAdapter installAdapter;
     PackageManager packageManager = null;
     List <com.restri_tech.Adapter.app> app;
     List <Package> apps;
     EditText ed;
     FloatingActionButton fab;
     private PrefManager prefManager;
+    TapTargetSequence sequence;
 
     public InstallFragment() {
         // Required empty public constructor
@@ -74,9 +64,7 @@ public class InstallFragment extends Fragment {
 
         app = new ArrayList < > ();
 
-        MyTask myTask = new MyTask();
-        myTask.execute();
-
+        new MyTask().execute();
     }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -90,7 +78,7 @@ public class InstallFragment extends Fragment {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                List < String > resultList = myArrayAdapter.getSelectedItem();
+                List < String > resultList = installAdapter.getSelectedItem();
                 for (int i = 0; i < resultList.size(); i++) {
                     Package p = new Package();
                     p.setName(resultList.get(i));
@@ -110,9 +98,21 @@ public class InstallFragment extends Fragment {
         Context context = v.getContext();
         myRecyclerView = v.findViewById(R.id.list);
         myRecyclerView.setLayoutManager(new LinearLayoutManager(context));
-        myArrayAdapter = new MyArrayAdapter(packageManager, app);
-        myRecyclerView.setAdapter(myArrayAdapter);
+        installAdapter = new InstallAdapter(packageManager, app);
+        myRecyclerView.setAdapter(installAdapter);
         ed = v.findViewById(R.id.editTextSearch);
+        ed.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ViewTooltip
+                        .on(ed)
+                        .autoHide(true, 1000)
+                        .corner(30)
+                        .position(ViewTooltip.Position.BOTTOM)
+                        .text("Right")
+                        .show();
+            }
+        });
         ed.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -130,36 +130,25 @@ public class InstallFragment extends Fragment {
             }
         });
 
-        final TapTargetSequence sequence = new TapTargetSequence(getActivity())
+        sequence= new TapTargetSequence(getActivity())
                 .targets(
                         // This tap target will target the back button, we just need to pass its containing toolbar
-                        TapTarget.forView(fab, "llll", sassyDesc).id(1).cancelable(false).icon(ContextCompat.getDrawable(context,R.drawable.ic_block)),
+                        TapTarget.forView(fab, "llll", sassyDesc).id(1).cancelable(false).icon(ContextCompat.getDrawable(context,R.drawable.ic_block))
                         // Likewise, this tap target will target the search button
-                        TapTarget.forView(ed, "simple", sassyDesc).id(2).cancelable(false).icon(ContextCompat.getDrawable(context,R.drawable.ic_action_search)
-                ))
-                .listener(new TapTargetSequence.Listener() {
-                    // This listener will tell us when interesting(tm) events happen in regards
-                    // to the sequence
+                ).listener(new TapTargetSequence.Listener() {
                     @Override
                     public void onSequenceFinish() {
-
                     }
-
                     @Override
                     public void onSequenceStep(TapTarget lastTarget, boolean targetClicked) {
-                        Log.d("TapTargetView", "Clicked on " + lastTarget.id());
-                    }
 
+                    }
                     @Override
                     public void onSequenceCanceled(TapTarget lastTarget) {
                     }
                 });
 
         prefManager = new PrefManager(context,"iapps");
-        if (prefManager.isFirstTimeLaunch()) {
-            sequence.start();
-            prefManager.setFirstTimeLaunch(false);
-        }
         return v;
     }
 
@@ -178,10 +167,15 @@ public class InstallFragment extends Fragment {
                         result.set(k, a);
                     }
             app.addAll(result);
-            myArrayAdapter.notifyDataSetChanged();
+            installAdapter.notifyDataSetChanged();
             ed.setVisibility(View.VISIBLE);
             fab.setVisibility(View.VISIBLE);
             dialog.dismiss();
+            if (prefManager.isFirstTimeLaunch()) {
+                sequence.start();
+                prefManager.setFirstTimeLaunch(false);
+            }
+
         }
 
         @Override
@@ -250,7 +244,7 @@ public class InstallFragment extends Fragment {
         }
 
         //calling a method of the adapter class and passing the filtered list
-        myArrayAdapter.filterList(filterdNames);
+        installAdapter.filterList(filterdNames);
     }
 
 }
