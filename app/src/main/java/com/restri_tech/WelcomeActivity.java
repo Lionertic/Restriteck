@@ -8,6 +8,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -48,10 +49,17 @@ public class WelcomeActivity extends AppCompatActivity {
     ComponentName mDeviceAdminSample;
     Handler handler;
     Runnable check;
+    public static boolean screen_on=true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LockReceiver lock = new LockReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_SCREEN_ON);
+        intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
+        intentFilter.addAction(Intent.ACTION_USER_PRESENT);
+        registerReceiver(lock,intentFilter);
         handler = new Handler();
         check = new Runnable() {
             @Override

@@ -25,6 +25,7 @@ import java.util.List;
 
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP;
 import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
+import static com.restri_tech.WelcomeActivity.screen_on;
 
 public class BackCheck extends Service {
 
@@ -39,7 +40,9 @@ public class BackCheck extends Service {
     private long t;
     private int ik;
     boolean  c=true;
-
+    Notification notification;
+    NotificationCompat.Builder builder;
+    NotificationManager manager;
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -50,11 +53,11 @@ public class BackCheck extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "LocationService",
+                    "Bloacking",
                     NotificationManager.IMPORTANCE_MIN
             );
 
-            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager= getSystemService(NotificationManager.class);
             manager.createNotificationChannel(channel);
         }
     }
@@ -68,12 +71,13 @@ public class BackCheck extends Service {
             intent.setFlags(FLAG_ACTIVITY_SINGLE_TOP | FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,PendingIntent.FLAG_UPDATE_CURRENT );
 
-            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+            builder= new NotificationCompat.Builder(this, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_block)
                     .setContentTitle("Blocking")
                     .setContentIntent(pendingIntent)
-                    .setAutoCancel(true)
-                    .build();
+                    .setAutoCancel(true);
+            notification=builder.build();
+
 
             startForeground(1, notification);
         }
@@ -81,17 +85,17 @@ public class BackCheck extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        saveUserLocation();
+        startBlock();
         return START_NOT_STICKY;
     }
-    private void saveUserLocation() {
+    private void startBlock() {
         mHandler.postDelayed(mRunnable = new Runnable() {
             @Override
             public void run() {
-                check();
+                if(screen_on)
+                    check();
                 if(c)
-                    mHandler.postDelayed(mRunnable, 1000);
-            }
+                    mHandler.postDelayed(mRunnable, 1000);}
         }, 2000);
     }
     void check(){
