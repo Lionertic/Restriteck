@@ -14,6 +14,14 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
@@ -23,22 +31,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.restri_tech.DB.Package;
 import com.restri_tech.HomeActivity;
-import com.restri_tech.Adapter.MyAdapter;
+import com.restri_tech.Adapter.BlockAdapter;
 import com.restri_tech.R;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 
 public class BlockFragment extends Fragment {
@@ -51,7 +50,7 @@ public class BlockFragment extends Fragment {
     PackageManager packageManager;
     EditText ed;
 
-    public static MyAdapter adapter;
+    public static BlockAdapter adapter;
     public static List < ApplicationInfo > appList, app;
 
     public BlockFragment() {}
@@ -72,35 +71,35 @@ public class BlockFragment extends Fragment {
 
         getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        SharedPreferences sharedPreferences = this.getActivity().getSharedPreferences("MyPrefs", 0);
-        if (sharedPreferences.getBoolean("bapps", true)) {
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
-            alertDialogBuilder.setMessage("1.All the apps Restricted in your device will be listed here.\n\n2.Select the apps to add timer \n\n3.Click the set button .\n\n4.Click the icon at the bottom when you are done ");
-            alertDialogBuilder.setPositiveButton("ok",
-                    new DialogInterface.OnClickListener() {
-                        @SuppressLint("RestrictedApi")
-                        @Override
-                        public void onClick(DialogInterface arg0, int arg1) {
-                            FloatingActionButton fab = (FloatingActionButton) getActivity().findViewById(R.id.fab);
-                            fab.setVisibility(View.VISIBLE);
-                            fab.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View view) {
-                                    getActivity().setTitle("Home");
-                                    HomeFragment hf = new HomeFragment();
-                                    FragmentManager fm = getActivity().getSupportFragmentManager();
-                                    fm.beginTransaction().replace(R.id.fragment, hf).commit();
-                                }
-                            });
-                        }
-                    });
-
-            AlertDialog alertDialog = alertDialogBuilder.create();
-            alertDialog.show();
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("bapps", false);
-            editor.commit();
-        }
+//        SharedPreferences sharedPreferences = this.getActivity().getSharedPreferences("MyPrefs", 0);
+//        if (sharedPreferences.getBoolean("bapps", true)) {
+//            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
+//            alertDialogBuilder.setMessage("1.All the apps Restricted in your device will be listed here.\n\n2.Select the apps to add timer \n\n3.Click the set button .\n\n4.Click the icon at the bottom when you are done ");
+//            alertDialogBuilder.setPositiveButton("ok",
+//                    new DialogInterface.OnClickListener() {
+//                        @SuppressLint("RestrictedApi")
+//                        @Override
+//                        public void onClick(DialogInterface arg0, int arg1) {
+//                            FloatingActionButton fab = (FloatingActionButton) getActivity().findViewById(R.id.fab);
+//                            fab.setVisibility(View.VISIBLE);
+//                            fab.setOnClickListener(new View.OnClickListener() {
+//                                @Override
+//                                public void onClick(View view) {
+//                                    getActivity().setTitle("Home");
+//                                    HomeFragment hf = new HomeFragment();
+//                                    FragmentManager fm = getActivity().getSupportFragmentManager();
+//                                    fm.beginTransaction().replace(R.id.fragment, hf).commit();
+//                                }
+//                            });
+//                        }
+//                    });
+//
+//            AlertDialog alertDialog = alertDialogBuilder.create();
+//            alertDialog.show();
+//            SharedPreferences.Editor editor = sharedPreferences.edit();
+//            editor.putBoolean("bapps", false);
+//            editor.commit();
+//        }
 
         View view = inflater.inflate(R.layout.fragment_block, container, false);
 
@@ -176,7 +175,7 @@ public class BlockFragment extends Fragment {
         };
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
         itemTouchHelper.attachToRecyclerView(rv);
-        adapter = new MyAdapter(getContext(), app, packageManager);
+        adapter = new BlockAdapter(getContext(), app, packageManager);
         rv.setAdapter(adapter);
 
         ed = view.findViewById(R.id.editTextSearch);

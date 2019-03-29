@@ -7,21 +7,21 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import androidx.work.WorkManager;
 import android.app.admin.DevicePolicyManager;
 import android.widget.Toast;
 
 import com.restri_tech.BackCheck;
 import com.restri_tech.PolicyManager.PolicyManager;
 import com.restri_tech.R;
-
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -40,47 +40,24 @@ public class HomeFragment extends Fragment {
         getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         policyManager = new PolicyManager(getContext());
 
-        SharedPreferences sharedPreferences = this.getActivity().getSharedPreferences("MyPrefs", 0);
-        if (!policyManager.isAdminActive()) {
-            android.app.AlertDialog alertDialog = new android.app.AlertDialog.Builder(getContext())
-                    .setTitle("Security")
-                    .setMessage("To Prevent Uninstall Of The App")
-                    .setPositiveButton("Activate", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            Intent activateDeviceAdmin = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-                            activateDeviceAdmin.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, policyManager.getAdminComponent());
-                            activateDeviceAdmin.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,"After activating admin, you will be able to block application uninstallation.");
-                            startActivityForResult(activateDeviceAdmin, PolicyManager.DPM_ACTIVATION_REQUEST_CODE);
-                        }
-                    })
-                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            // do nothing
-                            dialog.dismiss();
-                        }
-                    })
-                    .setIcon(R.drawable.ic_action_alert)
-                    .create();
-
-            //alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-            alertDialog.show();
-        }
-        if (sharedPreferences.getBoolean("home2", true)) {
-
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getContext());
-            alertDialogBuilder.setMessage("You are just one step away from completing the setup.\n \tSelect start service to start");
-            alertDialogBuilder.setPositiveButton("ok",
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface arg0, int arg1) {
-                            //startActivity(new Intent(getBaseContext(),PassCheck.class));
-                        }
-                    });
-
-            AlertDialog alertDialog = alertDialogBuilder.create();
-            alertDialog.show();
-            sharedPreferences.edit().putBoolean("home2", false).commit();
-        }
+//        SharedPreferences sharedPreferences = this.getActivity().getSharedPreferences("MyPrefs", 0);
+//
+//        if (sharedPreferences.getBoolean("home2", true)) {
+//
+//            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getContext());
+//            alertDialogBuilder.setMessage("You are just one step away from completing the setup.\n \tSelect start service to start");
+//            alertDialogBuilder.setPositiveButton("ok",
+//                    new DialogInterface.OnClickListener() {
+//                        @Override
+//                        public void onClick(DialogInterface arg0, int arg1) {
+//                            //startActivity(new Intent(getBaseContext(),PassCheck.class));
+//                        }
+//                    });
+//
+//            AlertDialog alertDialog = alertDialogBuilder.create();
+//            alertDialog.show();
+//            sharedPreferences.edit().putBoolean("home2", false).commit();
+//        }
     }
 
     @Override

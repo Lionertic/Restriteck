@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -18,8 +19,6 @@ import com.restri_tech.DB.Package;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import androidx.appcompat.app.AppCompatActivity;
 
 public class custom extends AppCompatActivity {
     List <Package> apps;
@@ -38,10 +37,10 @@ public class custom extends AppCompatActivity {
         SharedPreferences sd = getSharedPreferences("check", Context.MODE_PRIVATE);
         sd.edit().putBoolean("c", false).commit();
 
-        TextView t =(TextView) findViewById(R.id.t);
-        ImageView im = (ImageView)findViewById(R.id.im);
-        ed = (EditText) findViewById(R.id.time);
-        b = (Button) findViewById(R.id.b);
+        TextView t = findViewById(R.id.t);
+        ImageView im = findViewById(R.id.im);
+        ed = findViewById(R.id.time);
+        b = findViewById(R.id.b);
         Intent i = getIntent();
         k = i.getStringExtra("name");
         po = i.getIntExtra("position", 0);

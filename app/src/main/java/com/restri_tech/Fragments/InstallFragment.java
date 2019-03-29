@@ -3,38 +3,40 @@ package com.restri_tech.Fragments;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.getkeepsafe.taptargetview.TapTarget;
+import com.getkeepsafe.taptargetview.TapTargetSequence;
+import com.github.florent37.viewtooltip.ViewTooltip;
 import com.restri_tech.Adapter.app;
 import com.restri_tech.DB.Package;
 import com.restri_tech.HomeActivity;
-import com.restri_tech.Adapter.MyArrayAdapter;
+import com.restri_tech.Adapter.InstallAdapter;
+import com.restri_tech.PrefManager;
 import com.restri_tech.R;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import static com.restri_tech.HomeActivity.sassyDesc;
 
 
 /**
@@ -42,12 +44,14 @@ import androidx.recyclerview.widget.RecyclerView;
  */
 public class InstallFragment extends Fragment {
     RecyclerView myRecyclerView;
-    MyArrayAdapter myArrayAdapter;
+    InstallAdapter installAdapter;
     PackageManager packageManager = null;
     List <com.restri_tech.Adapter.app> app;
     List <Package> apps;
     EditText ed;
     FloatingActionButton fab;
+    private PrefManager prefManager;
+    TapTargetSequence sequence;
 
     public InstallFragment() {
         // Required empty public constructor
@@ -56,11 +60,11 @@ public class InstallFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
         app = new ArrayList < > ();
 
-        MyTask myTask = new MyTask();
-        myTask.execute();
-
+        new MyTask().execute();
     }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -68,36 +72,13 @@ public class InstallFragment extends Fragment {
         // Inflate the layout for this fragment
         getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-
-        SharedPreferences sharedPreferences = this.getActivity().getSharedPreferences("MyPrefs", 0);
-        if (sharedPreferences.getBoolean("iapps", true)) {
-
-
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getContext());
-            alertDialogBuilder.setMessage("1.All the apps installed in your device will be listed here. \n\n2.Select the apps you want to restrict \n\n3.Click the icon at the bottom of the screen");
-            alertDialogBuilder.setPositiveButton("ok",
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface arg0, int arg1) {
-                            //startActivity(new Intent(getBaseContext(),PassCheck.class));
-
-                        }
-                    });
-
-            AlertDialog alertDialog = alertDialogBuilder.create();
-            alertDialog.show();
-            sharedPreferences.edit().putBoolean("iapps", false).commit();
-
-        }
-
-
         View v = inflater.inflate(R.layout.fragment_install, container, false);
 
         fab = v.findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                List < String > resultList = myArrayAdapter.getSelectedItem();
+                List < String > resultList = installAdapter.getSelectedItem();
                 for (int i = 0; i < resultList.size(); i++) {
                     Package p = new Package();
                     p.setName(resultList.get(i));
@@ -109,7 +90,7 @@ public class InstallFragment extends Fragment {
                 getActivity().setTitle("Blocked Apps");
                 BlockFragment bf = new BlockFragment();
                 FragmentManager fm = getFragmentManager();
-                fm.beginTransaction().replace(R.id.fragment, bf).commit();
+                fm.beginTransaction().replace(R.id.container, bf).commit();
 
             }
         });
@@ -117,9 +98,21 @@ public class InstallFragment extends Fragment {
         Context context = v.getContext();
         myRecyclerView = v.findViewById(R.id.list);
         myRecyclerView.setLayoutManager(new LinearLayoutManager(context));
-        myArrayAdapter = new MyArrayAdapter(packageManager, app);
-        myRecyclerView.setAdapter(myArrayAdapter);
+        installAdapter = new InstallAdapter(packageManager, app);
+        myRecyclerView.setAdapter(installAdapter);
         ed = v.findViewById(R.id.editTextSearch);
+        ed.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ViewTooltip
+                        .on(ed)
+                        .autoHide(true, 1000)
+                        .corner(30)
+                        .position(ViewTooltip.Position.BOTTOM)
+                        .text("Right")
+                        .show();
+            }
+        });
         ed.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -136,6 +129,26 @@ public class InstallFragment extends Fragment {
                 filter(s.toString());
             }
         });
+
+        sequence= new TapTargetSequence(getActivity())
+                .targets(
+                        // This tap target will target the back button, we just need to pass its containing toolbar
+                        TapTarget.forView(fab, "llll", sassyDesc).id(1).cancelable(false).icon(ContextCompat.getDrawable(context,R.drawable.ic_block))
+                        // Likewise, this tap target will target the search button
+                ).listener(new TapTargetSequence.Listener() {
+                    @Override
+                    public void onSequenceFinish() {
+                    }
+                    @Override
+                    public void onSequenceStep(TapTarget lastTarget, boolean targetClicked) {
+
+                    }
+                    @Override
+                    public void onSequenceCanceled(TapTarget lastTarget) {
+                    }
+                });
+
+        prefManager = new PrefManager(context,"iapps");
         return v;
     }
 
@@ -152,14 +165,17 @@ public class InstallFragment extends Fragment {
                         app a = result.get(i);
                         result.set(i, result.get(k));
                         result.set(k, a);
-                        Log.e("qwertyuiop",a.aiGet().loadLabel(packageManager).toString());
                     }
-
             app.addAll(result);
-            myArrayAdapter.notifyDataSetChanged();
+            installAdapter.notifyDataSetChanged();
             ed.setVisibility(View.VISIBLE);
             fab.setVisibility(View.VISIBLE);
             dialog.dismiss();
+            if (prefManager.isFirstTimeLaunch()) {
+                sequence.start();
+                prefManager.setFirstTimeLaunch(false);
+            }
+
         }
 
         @Override
@@ -228,7 +244,7 @@ public class InstallFragment extends Fragment {
         }
 
         //calling a method of the adapter class and passing the filtered list
-        myArrayAdapter.filterList(filterdNames);
+        installAdapter.filterList(filterdNames);
     }
 
 }

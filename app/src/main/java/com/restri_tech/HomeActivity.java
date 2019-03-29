@@ -1,89 +1,232 @@
 package com.restri_tech;
 
-import android.app.Activity;
-import android.app.ActivityManager;
+import android.app.admin.DevicePolicyManager;
+import android.arch.persistence.room.Room;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.res.TypedArray;
+import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.ColorInt;
+import android.support.annotation.ColorRes;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.text.SpannableString;
+import android.text.style.StyleSpan;
+import android.util.Log;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.google.android.material.navigation.NavigationView;
 import com.restri_tech.DB.MyAppDatabase;
 import com.restri_tech.Forgot.Forgot;
 import com.restri_tech.Fragments.BlockFragment;
 import com.restri_tech.Fragments.HomeFragment;
 import com.restri_tech.Fragments.InstallFragment;
 import com.restri_tech.Fragments.Main;
+import com.restri_tech.PolicyManager.DeviceAdminSample;
+import com.restri_tech.menu.DrawerAdapter;
+import com.restri_tech.menu.DrawerItem;
+import com.restri_tech.menu.SimpleItem;
+import com.restri_tech.menu.SpaceItem;
+import com.yarolegovich.slidingrootnav.SlidingRootNav;
+import com.yarolegovich.slidingrootnav.SlidingRootNavBuilder;
 
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.fragment.app.FragmentManager;
-import androidx.room.Room;
+import java.util.Arrays;
 
-public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class HomeActivity extends AppCompatActivity implements DrawerAdapter.OnItemSelectedListener {
 
     public static MyAppDatabase myAppDatabase;
-    public static Activity activity;
+    private static final int POS_HOME = 0;
+    private static final int POS_INSTALLED = 1;
+    private static final int POS_BLOCKED = 2;
+    private static final int POS_CHANGE = 4;
+    private static final int POS_NUMBER = 5;
+    private static final int POS_UNINSTALL = 6;
 
+    private String[] screenTitles;
+    private Drawable[] screenIcons;
+
+    private SlidingRootNav slidingRootNav;
+    public static Display display;
+    public static Drawable droid ;
+    public static Rect droidTarget;
+    public static SpannableString sassyDesc;
+
+    PrefManager prefManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         super.onCreate(savedInstanceState);
+        LockReceiver lock = new LockReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_SCREEN_ON);
+        intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
+        intentFilter.addAction(Intent.ACTION_USER_PRESENT);
+        registerReceiver(lock,intentFilter);
         setContentView(R.layout.activity_home);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        activity=this;
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        display = getWindowManager().getDefaultDisplay();
+        droid = ContextCompat.getDrawable(this, R.drawable.ic_action_number);
+        droidTarget = new Rect(0, 0, droid.getIntrinsicWidth() * 2, droid.getIntrinsicHeight() * 2);
+        droidTarget.offset(display.getWidth() / 2, display.getHeight() / 2);
 
+        sassyDesc = new SpannableString("It allows you to go back, sometimes");
+        sassyDesc.setSpan(new StyleSpan(Typeface.ITALIC), sassyDesc.length() - "sometimes".length(), sassyDesc.length(), 0);
+
+
+        slidingRootNav = new SlidingRootNavBuilder(this)
+                .withToolbarMenuToggle(toolbar)
+                .withMenuOpened(false)
+                .withContentClickableWhenMenuOpened(false)
+                .withSavedState(savedInstanceState)
+                .withMenuLayout(R.layout.menu_left_drawer)
+                .inject();
+
+        screenIcons = loadScreenIcons();
+        screenTitles = loadScreenTitles();
+
+        DrawerAdapter adapter = new DrawerAdapter(Arrays.asList(
+                createItemFor(POS_HOME).setChecked(true),
+                createItemFor(POS_INSTALLED),
+                createItemFor(POS_BLOCKED),
+                new SpaceItem(48),
+                createItemFor(POS_CHANGE),
+                createItemFor(POS_NUMBER),
+                createItemFor(POS_UNINSTALL)));
+        adapter.setListener(this);
+
+        RecyclerView list = findViewById(R.id.list);
+        list.setNestedScrollingEnabled(false);
+        list.setLayoutManager(new LinearLayoutManager(this));
+        list.setAdapter(adapter);
+
+        adapter.setSelected(POS_HOME);
         myAppDatabase = Room.databaseBuilder(getApplicationContext(), MyAppDatabase.class, "userdb").fallbackToDestructiveMigration().allowMainThreadQueries().build();
-        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", 0);
-        if (sharedPreferences.getBoolean("home", true)) {
-
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("home", false);
-            editor.commit();
-
+        prefManager = new PrefManager(getBaseContext(),"home");
+        if (prefManager.isFirstTimeLaunch()) {
             setTitle("Installed Apps");
             InstallFragment iF = new InstallFragment();
             FragmentManager fm = getSupportFragmentManager();
-            fm.beginTransaction().replace(R.id.fragment, iF).commit();
-
+            fm.beginTransaction().replace(R.id.container, iF).commit();
+            prefManager.setFirstTimeLaunch(false);
         }
         else {
-
             setTitle("Home");
             HomeFragment hf = new HomeFragment();
             FragmentManager fm = getSupportFragmentManager();
-            fm.beginTransaction().replace(R.id.fragment, hf).commit();
+            fm.beginTransaction().replace(R.id.container, hf).commit();
         }
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else if(getSupportFragmentManager().getBackStackEntryCount()> 0) {
+        if(getSupportFragmentManager().getBackStackEntryCount()> 0) {
             getSupportFragmentManager().popBackStack();
         }else{
             Toast.makeText(getApplicationContext(), "Cant close", Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    public void onItemSelected(int position) {
+        FragmentManager fm = getSupportFragmentManager();
+        switch (position){
+            case POS_HOME :
+                change(false);
+                setTitle("Home");
+                HomeFragment hf = new HomeFragment();
+                fm.beginTransaction().replace(R.id.container, hf).commit();
+                break;
+            case POS_INSTALLED :
+                change(false);
+                setTitle("Installed Apps");
+                InstallFragment iF = new InstallFragment();
+                fm.beginTransaction().replace(R.id.container, iF).commit();
+                break;
+            case POS_BLOCKED :
+                change(false);
+                setTitle("Blocked Apps");
+                BlockFragment bf = new BlockFragment();
+                fm.beginTransaction().replace(R.id.container, bf).commit();
+                break;
+            case POS_CHANGE :
+                change(true);
+                setTitle("Change Password");
+                Main m = new Main();
+                fm.beginTransaction().replace(R.id.container, m).commit();
+                break;
+            case POS_NUMBER :
+                change(false);
+                SharedPreferences sd1 = getSharedPreferences("Forgot",0);
+                sd1.edit().putBoolean("FirstN",true).commit();
+                setTitle("Change");
+                Forgot f = new Forgot();
+                fm.beginTransaction().replace(R.id.container, f).commit();
+            case POS_UNINSTALL:
+                change(false);
+                ComponentName devAdminReceiver = new ComponentName(getBaseContext(), DeviceAdminSample.class);
+                DevicePolicyManager dpm = (DevicePolicyManager)getBaseContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
+                dpm.removeActiveAdmin(devAdminReceiver);
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
+                startActivity(intent);
+        }
+        slidingRootNav.closeMenu();
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) {
+            if (resultCode == RESULT_OK) {
+                Log.d("TAG", "onActivityResult: user accepted the (un)install");
+            } else if (resultCode == RESULT_CANCELED) {
+                Log.d("TAG", "onActivityResult: user canceled the (un)install");
+            } else if (resultCode == RESULT_FIRST_USER) {
+                Log.d("TAG", "onActivityResult: failed to (un)install");
+            }
+        }
+    }
+    private DrawerItem createItemFor(int position) {
+        return new SimpleItem(screenIcons[position], screenTitles[position])
+                .withIconTint(color(R.color.textColorSecondary))
+                .withTextTint(color(R.color.textColorPrimary))
+                .withSelectedIconTint(color(R.color.colorAccent))
+                .withSelectedTextTint(color(R.color.colorAccent));
+    }
+
+    private String[] loadScreenTitles() {
+        return getResources().getStringArray(R.array.ld_activityScreenTitles);
+    }
+
+    private Drawable[] loadScreenIcons() {
+        TypedArray ta = getResources().obtainTypedArray(R.array.ld_activityScreenIcons);
+        Drawable[] icons = new Drawable[ta.length()];
+        for (int i = 0; i < ta.length(); i++) {
+            int id = ta.getResourceId(i, 0);
+            if (id != 0) {
+                icons[i] = ContextCompat.getDrawable(this, id);
+            }
+        }
+        ta.recycle();
+        return icons;
     }
 
     @Override
@@ -115,84 +258,18 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             AlertDialog alertDialog = alertDialogBuilder.create();
             alertDialog.show();
         }else if(id == R.id.exit){
-            SharedPreferences sd=getSharedPreferences("Worker",Context.MODE_PRIVATE);
+            SharedPreferences sd=getSharedPreferences("Worker", Context.MODE_PRIVATE);
             sd.edit().putBoolean("Now",false).commit();
             finish();
         }
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-        if (id == R.id.home) {
-            change(false);
-            setTitle("Home");
-            HomeFragment hf = new HomeFragment();
-            FragmentManager fm = getSupportFragmentManager();
-            fm.beginTransaction().replace(R.id.fragment, hf).commit();
-        } else if (id == R.id.bapps) {
-            change(false);
-            setTitle("Blocked Apps");
-            BlockFragment bf = new BlockFragment();
-            FragmentManager fm = getSupportFragmentManager();
-            fm.beginTransaction().replace(R.id.fragment, bf).commit();
-        } else if (id == R.id.pass) {
-            change(true);
-            setTitle("Change Password");
-            Main m = new Main();
-            FragmentManager fm = getSupportFragmentManager();
-            fm.beginTransaction().replace(R.id.fragment, m).commit();
-        } else if (id == R.id.iapps) {
-            change(false);
-            setTitle("Installed Apps");
-            InstallFragment iF = new InstallFragment();
-            FragmentManager fm = getSupportFragmentManager();
-            fm.beginTransaction().replace(R.id.fragment, iF).commit();
-        }else if(id == R.id.security){
-            change(false);
-            SharedPreferences sd1 = getSharedPreferences("Forgot",0);
-            sd1.edit().putBoolean("FirstN",true).commit();
-            setTitle("Change");
-            Forgot f = new Forgot();
-            FragmentManager fm = getSupportFragmentManager();
-            fm.beginTransaction().replace(R.id.fragment, f).commit();
-        }
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-    @Override
-    protected void onPause() {
-        super.onPause();
-        change(false);
-        SharedPreferences sharedPreferences = getSharedPreferences("check", Context.MODE_PRIVATE);
-        sharedPreferences.edit().putBoolean("c", true).commit();
-        ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
-        activityManager.moveTaskToFront(getTaskId(), 0);
-    }
-    @Override
-    protected void onResume() {
-        super.onResume();
-        SharedPreferences sharedPreferences = getSharedPreferences("check", Context.MODE_PRIVATE);
-        if (sharedPreferences.getBoolean("c", true)) {
-            Intent i =new Intent(this, MainActivity.class);
-            //i.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME | Intent.FLAG_ACTIVITY_NEW_TASK) ;
-            startActivity(i);
-            sharedPreferences.edit().putBoolean("c", false).commit();
-        }
-    }
 
-    @Override
-    protected void onDestroy() {
-        SharedPreferences sharedPreferences = getSharedPreferences("check", Context.MODE_PRIVATE);
-        sharedPreferences.edit().putBoolean("c", true).commit();
-        change(false);
-        super.onDestroy();
+    @ColorInt
+    private int color(@ColorRes int res) {
+        return ContextCompat.getColor(this, res);
     }
-
     private void change(boolean b){
         SharedPreferences sd = getSharedPreferences("Home",0);
         sd.edit().putBoolean("First",b).commit();
@@ -203,6 +280,4 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         sd = getSharedPreferences("Pass",0);
         sd.edit().putBoolean("First",b).commit();
     }
-
-
 }
