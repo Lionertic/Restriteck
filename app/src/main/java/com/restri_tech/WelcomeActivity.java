@@ -50,11 +50,18 @@ public class WelcomeActivity extends AppCompatActivity {
     Handler handler;
     Runnable check;
     public static boolean screen_on=true;
+    LockReceiver lock;
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(lock);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        LockReceiver lock = new LockReceiver();
+        lock = new LockReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
